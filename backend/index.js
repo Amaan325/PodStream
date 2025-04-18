@@ -1,36 +1,38 @@
+// server.js or index.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const userRoutes = require("./routes/userRoutes");
-const favoritesRoutes = require("./routes/favoriteRoutes")
-const podcastRoutes = require("./routes/podcastRoutes");
-const youtubeRoutes = require("./routes/youtubeRoutes");
 const path = require("path");
+
 require("dotenv").config();
+
+const userRoutes = require("./routes/userRoutes");
+const favoritesRoutes = require("./routes/favoriteRoutes");
+const podcastRoutes = require("./routes/podcastRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+const youtubeRoutes = require("./routes/youtubeRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 
-// Middleware
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5173"], // Allow your frontend origins
+    origin: ["http://localhost:3000", "http://localhost:5173"],
     credentials: true,
   })
 );
 app.use(express.json());
 app.use(cookieParser());
-
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// API routes
-app.use("/user/favorites", favoritesRoutes)
-
+app.use("/user/favorites", favoritesRoutes);
 app.use("/user", userRoutes);
-app.use("/podcasts", podcastRoutes); // Use podcast routes
+app.use("/podcasts", podcastRoutes);
 app.use("/api/youtube", youtubeRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/admin", adminRoutes);
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const errorMessage = err.message || "Internal Server Error";
@@ -41,15 +43,17 @@ app.use((err, req, res, next) => {
   });
 });
 
+// DB Connection
 mongoose
   .connect(process.env.mongodb_url, {})
-  .then(() => {
-    console.log("Connected with Database");
-  })
-  .catch((error) => {
-    console.error("Error connecting to database:", error);
-  });
+  .then(() => console.log("Connected to Database"))
+  .catch((err) => console.error("Error connecting to DB:", err));
 
-app.listen(3000, () => {
-  console.log(`Server running on port 3000!`);
+// Start server
+const server = app.listen(3000, () => {
+  console.log("Server running on port 3000!");
 });
+
+// 🔥 Initialize Socket.IO
+const socket = require("./socket");
+socket.init(server);

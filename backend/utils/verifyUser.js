@@ -1,9 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const verifyUser = async (req, res, next) => {
-  console.log("sdfsd");
   const token = req.cookies.access_token;
-  console.log(token);
   if (!token) {
     return next(new Error("Token is missing"));
   }

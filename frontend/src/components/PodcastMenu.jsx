@@ -4,32 +4,30 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 
 const PodcastMenu = ({ videoId }) => {
-  const { currentUser } = useSelector((state) => state.user); // Access current user from Redux
+  const { currentUser } = useSelector((state) => state.user);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const dropdownRef = useRef(null);
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen((prevState) => !prevState);
-  };
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const openReportModal = () => setIsReportModalOpen(true);
+  const closeReportModal = () => setIsReportModalOpen(false);
 
   const checkPodcastInFavs = async () => {
     try {
-      const response = await axios.get(
+      const res = await axios.get(
         `http://localhost:3000/user/favorites/exists/${videoId}`,
-        { headers: { "Content-Type": "application/json" }, withCredentials: true }
+        { withCredentials: true }
       );
-
-      setIsFavorite(response.data.exists); // Simplified state setting
+      setIsFavorite(res.data.exists);
     } catch (error) {
-      console.error("Error checking podcast in favorites:", error);
+      console.error("Error checking favorites:", error);
     }
   };
 
   const handleAddToFavorites = async () => {
-    if (!currentUser || !currentUser._id) return; // Early return if no current user
-
+    if (!currentUser) return;
     try {
       const url = isFavorite
         ? `http://localhost:3000/user/favorites/remove/${videoId}`
@@ -38,34 +36,44 @@ const PodcastMenu = ({ videoId }) => {
       await axios({
         method: isFavorite ? "put" : "post",
         url,
-        data: isFavorite ? undefined : { podcastId: videoId }, // Add data only if needed
-        headers: { "Content-Type": "application/json" },
+        data: isFavorite ? {} : { podcastId: videoId },
         withCredentials: true,
       });
 
-      setIsFavorite(!isFavorite); // Toggle favorite state
-    } catch (error) {
-      console.error("Error handling favorite action:", error);
+      setIsFavorite(!isFavorite);
+    } catch (err) {
+      console.error("Favorite error:", err);
     }
   };
 
-  const openReportModal = () => setIsReportModalOpen(true);
-  const closeReportModal = () => setIsReportModalOpen(false);
+  const handleReportSubmit = async () => {
+    const reason = {
+      copyright: document.querySelector('input[name="copyright"]').checked,
+      misinformation: document.querySelector('input[name="misinformation"]').checked,
+      harmfulContent: document.querySelector('input[name="harmfulContent"]').checked,
+    };
 
-  const handleReportSubmit = () => {
-    console.log("Report submitted");
-    closeReportModal();
+    try {
+      await axios.post(
+        `http://localhost:3000/api/reports/report/${videoId}`,
+        { reason },
+        { withCredentials: true }
+      );
+      alert("Report submitted successfully");
+      closeReportModal();
+    } catch (error) {
+      console.error("Error submitting report:", error);
+      alert("Failed to submit report");
+    }
   };
 
   useEffect(() => {
-    if (videoId && currentUser) {
-      checkPodcastInFavs();
-    }
+    if (videoId && currentUser) checkPodcastInFavs();
   }, [videoId, currentUser]);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setIsDropdownOpen(false);
       }
     };
@@ -83,7 +91,7 @@ const PodcastMenu = ({ videoId }) => {
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-300 rounded-lg shadow-lg">
+        <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-300 rounded-lg shadow-lg z-50">
           <ul>
             <li
               className="px-4 py-2 text-white hover:bg-gray-600 cursor-pointer"
@@ -107,13 +115,13 @@ const PodcastMenu = ({ videoId }) => {
             <h3 className="text-xl mb-4">Report Podcast</h3>
             <div className="space-y-4">
               <label className="flex items-center">
-                <input type="checkbox" className="mr-2" /> Copyright
+                <input type="checkbox" className="mr-2" name="copyright" /> Copyright
               </label>
               <label className="flex items-center">
-                <input type="checkbox" className="mr-2" /> Misinformation
+                <input type="checkbox" className="mr-2" name="misinformation" /> Misinformation
               </label>
               <label className="flex items-center">
-                <input type="checkbox" className="mr-2" /> Harmful Content
+                <input type="checkbox" className="mr-2" name="harmfulContent" /> Harmful Content
               </label>
             </div>
             <div className="mt-4 flex justify-between items-center">

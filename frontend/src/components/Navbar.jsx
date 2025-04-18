@@ -47,13 +47,13 @@ const Navbar = () => {
 
         {/* Center Navigation */}
         <div className="flex flex-grow justify-center space-x-8">
-          <NavLink
+          {/* <NavLink
             to="/"
             className="text-white hover:text-red-600 transition-all text-lg flex items-center gap-1"
           >
             Dashboard
             <MdOutlineDashboard size={24} />
-          </NavLink>
+          </NavLink> */}
           <NavLink
             to="/search"
             className="text-white hover:text-red-600 transition-all text-lg flex items-center gap-1"
