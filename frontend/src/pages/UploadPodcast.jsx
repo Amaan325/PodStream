@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useSelector } from "react-redux";
-import Lottie from "lottie-react";
 import { FaArrowLeftLong } from "react-icons/fa6";
-import uploadanimation from "../assets/upload.json"; // Replace with your animation JSON file
+import Lottie from "lottie-react";
+import uploadAnimation from "../assets/upload.json";
 
 const UploadPodcast = () => {
   const { currentUser } = useSelector((state) => state.user);
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -17,224 +18,196 @@ const UploadPodcast = () => {
     category: "",
     videoFile: null,
   });
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
     const { id, value, files } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
+    setFormData((prev) => ({
+      ...prev,
       [id]: files ? files[0] : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(false);
-    setProgress(0);
+    if (!formData.videoFile || !formData.thumbnail) {
+      setError("Please select both a video and thumbnail");
+      return;
+    }
 
-    const formDataToSend = new FormData();
-    formDataToSend.append("title", formData.title);
-    formDataToSend.append("description", formData.description);
-    formDataToSend.append("thumbnail", formData.thumbnail);
-    formDataToSend.append("tags", formData.tags);
-    formDataToSend.append("category", formData.category);
-    formDataToSend.append("videoFile", formData.videoFile);
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
 
     try {
-      await axios.post(
+      const data = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value) data.append(key, value);
+      });
+
+      const response = await axios.post(
         `http://localhost:3000/podcasts/upload/${currentUser._id}`,
-        formDataToSend,
+        data,
         {
           headers: { "Content-Type": "multipart/form-data" },
           withCredentials: true,
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            setProgress(percentCompleted);
-          },
         }
       );
-      setLoading(false);
-      navigate("/");
+
+      if (response.data.success) {
+        setSuccess(true);
+        setTimeout(() => navigate("/podcasts"), 2000);
+      } else {
+        setError(response.data.message || "Upload failed");
+      }
     } catch (err) {
+      setError(err.response?.data?.message || "Upload failed");
+    } finally {
       setLoading(false);
-      setError(true);
     }
   };
 
   return (
-    <div className="flex items-center justify-center w-full h-screen bg-black px-6">
-      {/* Back Button */}
-      <div
-        className="absolute top-6 left-6 flex items-center text-red-500 cursor-pointer"
-        onClick={() => navigate(-1)}
-      >
-        <FaArrowLeftLong size={24} />
-        <span className="ml-2 text-white">Back</span>
-      </div>
+    <div className="min-h-screen bg-black text-white p-6">
+      <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center text-red-500 mb-8"
+        >
+          <FaArrowLeftLong className="mr-2" />
+          Back
+        </button>
 
-      <div className="flex items-center justify-center w-full max-w-7xl space-x-10">
-        {/* Left Animation Section */}
-        <div className="mt-80 flex flex-col items-center space-y-6">
-          <Lottie
-            animationData={uploadanimation}
-            loop={true}
-            autoplay={true}
-            style={{ width: "300px", height: "300px" }}
-          />
-          <Lottie
-            animationData={uploadanimation}
-            loop={true}
-            autoplay={true}
-            style={{ width: "300px", height: "300px" }}
-          />
-           <Lottie
-            animationData={uploadanimation}
-            loop={true}
-            autoplay={true}
-            style={{ width: "300px", height: "300px" }}
-          />
-        </div>
+        <div className="flex flex-col lg:flex-row items-start gap-6">
+          {/* Left Animation */}
+          <div className="hidden lg:flex w-1/4 justify-center">
+            <Lottie animationData={uploadAnimation} loop autoplay className="h-72" />
+          </div>
 
-        {/* Form Section (Center) */}
-        <div className="mt-80 w-[600px] bg-black rounded-lg shadow-lg">
-          <h1 className="font-semibold text-3xl text-white text-center mb-6">
-            Upload Podcast
-          </h1>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Podcast Title */}
-            <label htmlFor="title" className="text-white">
-              Podcast Title
-            </label>
-            <input
-              type="text"
-              id="title"
-              placeholder="Enter the podcast title"
-              className="bg-gray-100 text-black rounded-lg p-3 text-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all w-full"
-              onChange={handleChange}
-              required
-            />
+          {/* Upload Form */}
+          <div className="w-full lg:w-2/4 bg-gray-900 rounded-xl p-8 -mt-12">
+            <h1 className="text-3xl font-bold mb-8 text-center">
+              Upload New Podcast
+            </h1>
 
-            {/* Description */}
-            <label htmlFor="description" className="text-white">
-              Description
-            </label>
-            <textarea
-              id="description"
-              placeholder="Enter the podcast description"
-              className="bg-gray-100 text-black rounded-lg p-3 text-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all w-full h-36"
-              onChange={handleChange}
-              required
-            />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block mb-2 font-medium">Podcast Title</label>
+                <input
+                  type="text"
+                  id="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className="w-full p-3 rounded bg-gray-700 focus:ring-2 focus:ring-red-500"
+                  required
+                />
+              </div>
 
-            {/* Thumbnail */}
-            <label htmlFor="thumbnail" className="text-white">
-              Thumbnail (Image)
-            </label>
-            <input
-              type="file"
-              id="thumbnail"
-              accept="image/*"
-              className="bg-gray-100 text-black rounded-lg p-3 text-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all w-full"
-              onChange={handleChange}
-              required
-            />
+              <div>
+                <label className="block mb-2 font-medium">Description</label>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full p-3 rounded bg-gray-700 focus:ring-2 focus:ring-red-500"
+                  required
+                />
+              </div>
 
-            {/* Tags */}
-            <label htmlFor="tags" className="text-white">
-              Tags
-            </label>
-            <input
-              type="text"
-              id="tags"
-              placeholder="Enter tags (comma-separated)"
-              className="bg-gray-100 text-black rounded-lg p-3 text-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all w-full"
-              onChange={handleChange}
-            />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block mb-2 font-medium">Thumbnail</label>
+                  <input
+                    type="file"
+                    id="thumbnail"
+                    accept="image/*"
+                    onChange={handleChange}
+                    className="w-full p-2 rounded bg-gray-700"
+                    required
+                  />
+                </div>
 
-            {/* Category */}
-            <label htmlFor="category" className="text-white">
-              Category
-            </label>
-            <select
-              id="category"
-              className="bg-gray-100 text-black rounded-lg p-3 text-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-all w-full"
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select Category</option>
-              <option value="Technology">Technology</option>
-              <option value="Education">Education</option>
-              <option value="Health">Health</option>
-              <option value="Lifestyle">Lifestyle</option>
-              <option value="Business">Business</option>
-              <option value="Entertainment">Entertainment</option>
-            </select>
+                <div>
+                  <label className="block mb-2 font-medium">Video File</label>
+                  <input
+                    type="file"
+                    id="videoFile"
+                    accept="video/*"
+                    onChange={handleChange}
+                    className="w-full p-2 rounded bg-gray-700"
+                    required
+                  />
+                </div>
+              </div>
 
-            {/* Podcast File */}
-            <label htmlFor="videoFile" className="text-white">
-              Podcast (Video File)
-            </label>
-            <input
-              type="file"
-              id="videoFile"
-              accept="video/*"
-              className="bg-gray-100 text-black rounded-lg p-3 text-lg placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all w-full"
-              onChange={handleChange}
-              required
-            />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block mb-2 font-medium">Tags</label>
+                  <input
+                    type="text"
+                    id="tags"
+                    value={formData.tags}
+                    onChange={handleChange}
+                    placeholder="tech, education, etc."
+                    className="w-full p-3 rounded bg-gray-700"
+                  />
+                </div>
 
-            {/* Submit Button */}
-            <button
-              disabled={loading}
-              className="bg-red-600 text-lg text-white uppercase p-3 rounded-lg hover:bg-red-700 disabled:opacity-70 transition-all w-full"
-            >
-              {loading ? "Uploading..." : "Upload Podcast"}
-            </button>
-          </form>
+                <div>
+                  <label className="block mb-2 font-medium">Category</label>
+                  <select
+                    id="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    className="w-full p-3 rounded bg-gray-700"
+                    required
+                  >
+                    <option value="">Select Category</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Education">Education</option>
+                    <option value="Entertainment">Entertainment</option>
+                  </select>
+                </div>
+              </div>
 
-          {/* Progress Bar */}
-          {loading && (
-            <div className="w-full bg-gray-600 rounded-full mt-6 h-2">
-              <div
-                className="bg-fuchsia-700 h-2 rounded-full"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          )}
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full py-3 px-4 rounded-lg font-bold transition-all ${
+                  loading ? "bg-red-800" : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {loading ? "Uploading..." : "Upload Podcast"}
+              </button>
+            </form>
 
-          {/* Error Message */}
-          {error && (
-            <p className="text-red-500 text-center text-sm mt-3">
-              Something went wrong! Please try again.
-            </p>
-          )}
-        </div>
+            {loading && (
+              <div className="mt-4 p-3 bg-gray-800 rounded text-center">
+                Processing your podcast. This may take a few minutes...
+              </div>
+            )}
 
-        {/* Right Animation Section */}
-        <div className="mt-80 flex flex-col items-center space-y-6">
-          <Lottie
-            animationData={uploadanimation}
-            loop={true}
-            autoplay={true}
-            style={{ width: "300px", height: "300px" }}
-          />
-          <Lottie
-            animationData={uploadanimation}
-            loop={true}
-            autoplay={true}
-            style={{ width: "300px", height: "300px" }}
-          />
-              <Lottie
-            animationData={uploadanimation}
-            loop={true}
-            autoplay={true}
-            style={{ width: "300px", height: "300px" }}
-          />
+            {success && (
+              <div className="mt-4 p-3 bg-green-900 rounded text-center">
+                Podcast uploaded successfully! Redirecting...
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 p-3 bg-red-900 rounded text-center">
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Right Animation */}
+          <div className="hidden lg:flex w-1/4 justify-center">
+            <Lottie animationData={uploadAnimation} loop autoplay className="h-72" />
+          </div>
         </div>
       </div>
     </div>

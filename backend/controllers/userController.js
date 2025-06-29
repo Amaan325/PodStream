@@ -127,7 +127,6 @@ const signIn = async (req, res, next) => {
   }
 };
 
-
 const auth = async (req, res, next) => {
   const { email, displayName, photoUrl } = req.body;
   try {
@@ -230,6 +229,132 @@ const signOut = async (req, res, next) => {
   res.clearCookie("access_token").status(200).json({ message: "Signed out" });
 };
 
+// Subscription Controller Functions
+const checkSubscription = async (req, res) => {
+  console.log("Checking subscription status");
+  try {
+    const currentUserId = req.user.validUser._id;
+    const targetUserId = req.params.targetUserId;
+    console.log("CurrentUserID = ", currentUserId);
+    console.log("targetUserID = ", targetUserId);
+
+    const currentUser = await User.findById(currentUserId);
+    if (!currentUser) {
+      console.error("Current user not found");
+      return res.status(404).json({ message: "User not found." });
+    }
+    const isSubscribed = currentUser.subscribedUsers.includes(targetUserId);
+    console.log("Is subscribed:", isSubscribed);
+    res.status(200).json({ isSubscribed });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+const getSubscribersCount = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    res.status(200).json({ count: user.subscribers || 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+const subscribeUser = async (req, res) => {
+  console.log("In subscribe user");
+  try {
+    const currentUserId = req.user.validUser._id;
+    const targetUserId = req.params.targetUserId;
+    console.log("CurrentUserID = ", currentUserId);
+    console.log("targetUserID = ", targetUserId);
+
+    if (currentUserId === targetUserId) {
+      return res
+        .status(400)
+        .json({ message: "You cannot subscribe to yourself." });
+    }
+
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(currentUserId),
+      User.findById(targetUserId),
+    ]);
+
+    if (!targetUser || !currentUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Check if already subscribed
+    if (currentUser.subscribedUsers.includes(targetUserId)) {
+      return res.status(200).json({ message: "Already subscribed." });
+    }
+
+    // Update both users in parallel
+    await Promise.all([
+      User.findByIdAndUpdate(currentUserId, {
+        $addToSet: { subscribedUsers: targetUserId },
+      }),
+      User.findByIdAndUpdate(targetUserId, {
+        $inc: { subscribers: 1 },
+      }),
+    ]);
+
+    res.status(200).json({
+      message: "Subscribed successfully.",
+      isSubscribed: true,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+const unsubscribeUser = async (req, res) => {
+  try {
+    const currentUserId = req.user.validUser._id;
+    const targetUserId = req.params.targetUserId;
+
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(currentUserId),
+      User.findById(targetUserId),
+    ]);
+
+    if (!targetUser || !currentUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Check if not subscribed
+    if (!currentUser.subscribedUsers.includes(targetUserId)) {
+      return res.status(400).json({ message: "Not subscribed to this user." });
+    }
+
+    // Update both users in parallel
+    await Promise.all([
+      User.findByIdAndUpdate(currentUserId, {
+        $pull: { subscribedUsers: targetUserId },
+      }),
+      User.findByIdAndUpdate(targetUserId, {
+        $inc: { subscribers: -1 },
+      }),
+    ]);
+
+    res.status(200).json({
+      message: "Unsubscribed successfully.",
+      isSubscribed: false,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
 module.exports = {
   signUp,
   signIn,
@@ -238,4 +363,9 @@ module.exports = {
   deleteUser,
   signOut,
   verifyOtpAndRegister,
+  checkSubscription,
+  getSubscribersCount,
+
+  unsubscribeUser,
+  subscribeUser,
 };

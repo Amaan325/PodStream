@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { SiGooglepodcasts } from "react-icons/si";
@@ -10,13 +10,32 @@ import { MdFavoriteBorder } from "react-icons/md";
 import { IoIosSearch } from "react-icons/io";
 import { MdOutlineDashboard } from "react-icons/md";
 import { IoMdPersonAdd } from "react-icons/io";
-import { AiFillYoutube } from "react-icons/ai"; // Imported YouTube icon
+import { AiFillYoutube } from "react-icons/ai";
+import { io } from "socket.io-client";
 
 const Navbar = () => {
   const { currentUser } = useSelector((state) => state.user);
   const [modal, setModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const socket = io("http://localhost:3000", {
+      withCredentials: true,
+      transports: ["websocket"],
+    });
+
+    socket.emit("join", currentUser._id);
+    socket.on("newPodcastFromSubscribed", (data) => {
+      setNotifications((prev) => [data, ...prev]);
+    });
+
+    return () => socket.disconnect();
+  }, [currentUser]);
 
   const handleLoginClick = () => {
     setModal(true);
@@ -47,13 +66,6 @@ const Navbar = () => {
 
         {/* Center Navigation */}
         <div className="flex flex-grow justify-center space-x-8">
-          {/* <NavLink
-            to="/"
-            className="text-white hover:text-red-600 transition-all text-lg flex items-center gap-1"
-          >
-            Dashboard
-            <MdOutlineDashboard size={24} />
-          </NavLink> */}
           <NavLink
             to="/search"
             className="text-white hover:text-red-600 transition-all text-lg flex items-center gap-1"
@@ -82,13 +94,36 @@ const Navbar = () => {
             Upload
             <IoCloudUploadOutline size={24} />
           </NavLink>
-          <NavLink
-            to="/theme"
-            className="text-white hover:text-red-600 transition-all text-lg flex items-center gap-1"
-          >
-            Notifications
-            <IoMdNotificationsOutline size={24} />
-          </NavLink>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="relative text-white hover:text-red-600 text-lg flex items-center gap-1"
+            >
+              <IoMdNotificationsOutline size={24} />
+              {notifications.length > 0 && (
+                <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full px-1">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 w-64 bg-gray-800 text-white rounded shadow-lg max-h-96 overflow-y-auto z-50">
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center">No notifications</div>
+                ) : (
+                  notifications.map((n, index) => (
+                    <div
+                      key={index}
+                      className="p-3 border-b border-gray-700 text-sm hover:bg-gray-700 cursor-pointer"
+                    >
+                      {n.message}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* User Buttons */}

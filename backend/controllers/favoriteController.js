@@ -1,7 +1,7 @@
 const User = require("../models/userModel"); // Import User model
 const Podcast = require("../models/podcastModel");
 const mongoose = require("mongoose");
-const {getAllPodcasts} = require("../controllers/podcastController")
+const { getAllPodcasts } = require("../controllers/podcastController");
 
 // Add podcast to favorites
 const addFavorite = async (req, res) => {
@@ -54,8 +54,8 @@ const getUserFavorites = async (req, res) => {
     const allPodcasts = await Podcast.find(); // Get all podcasts from the Podcast model
 
     // Match favorite podcast IDs with the full list of podcasts
-    const favoritePodcasts = allPodcasts.filter(podcast => 
-      user.favorites.includes(podcast._id.toString()) // Check if podcast ID exists in user's favorites
+    const favoritePodcasts = allPodcasts.filter(
+      (podcast) => user.favorites.includes(podcast._id.toString()) // Check if podcast ID exists in user's favorites
     );
 
     // Return the matched podcasts
@@ -66,8 +66,6 @@ const getUserFavorites = async (req, res) => {
   }
 };
 
-
-
 const podcastExistsInFav = async (req, res) => {
   try {
     const { podcastId } = req.params; // Get podcastId from URL parameters
@@ -77,17 +75,17 @@ const podcastExistsInFav = async (req, res) => {
       return res.status(400).json({ error: "Invalid podcast ID format" });
     }
 
-    const userId = req.user._id;
-
+    const userId = req.user.validUser._id;
+    console.log("User ID:", userId);
     // Find the user and check if the podcast exists in their favorites
     const user = await User.findById(userId);
     if (!user) {
+      console.error("User not found");
       return res.status(404).json({ error: "User not found" });
     }
 
     // Check if the podcastId exists in the user's favorites array
     const exists = user.favorites.includes(podcastId);
-
     if (exists) {
       return res.status(200).json({ exists: true });
     } else {
@@ -102,7 +100,7 @@ const podcastExistsInFav = async (req, res) => {
 };
 
 const removeFromFav = async (req, res) => {
-  console.log("i am here")
+  console.log("i am here");
   try {
     const { podcastId } = req.params; // Get podcastId from URL parameters
 
@@ -111,7 +109,7 @@ const removeFromFav = async (req, res) => {
       return res.status(400).json({ error: "Invalid podcast ID format" });
     }
 
-    const userId = req.user._id; // Get user ID from the authenticated user
+    const userId = req.user.validUser._id; // Get user ID from the authenticated user
 
     // Find the user and remove the podcastId from their favorites array
     const user = await User.findById(userId);

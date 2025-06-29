@@ -52,13 +52,15 @@ const Favorite = () => {
                   className="bg-black rounded-lg overflow-hidden shadow-lg relative"
                 >
                   <PodcastCard
+                    key={podcast._id}
                     id={podcast._id}
                     image={podcast.thumbnail}
                     title={podcast.title}
-                    username={podcast.uploader.username}
+                    username={podcast.uploader?.username || "Unknown"}
                     views={podcast.views}
                     description={podcast.description}
                     videoUrl={podcast.videoUrl}
+                    uploaderId={podcast.uploader?._id}
                   />
                 </div>
               ))}

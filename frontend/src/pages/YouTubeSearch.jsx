@@ -1,25 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import { FaArrowLeftLong } from "react-icons/fa6";
 
 const YouTubeSearch = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeVideo, setActiveVideo] = useState(null); // Store the active video to show
-  const [showPlayer, setShowPlayer] = useState(false); // Flag to toggle video player
-  const navigate = useNavigate();
+  const [activeVideo, setActiveVideo] = useState(null);
+  const [showPlayer, setShowPlayer] = useState(false);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  // Debounce timer reference
+  const debounceTimeout = useRef(null);
+
+  // When user types, delay API call by 300ms
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+
+    // Clear previous timer
+    if (debounceTimeout.current) {
+      clearTimeout(debounceTimeout.current);
+    }
+
+    debounceTimeout.current = setTimeout(() => {
+      fetchResults(query);
+    }, 300);
+
+    return () => clearTimeout(debounceTimeout.current);
+  }, [query]);
+
+  const fetchResults = async (searchTerm) => {
     setLoading(true);
     try {
-      console.log("Searching for:", query);
-      const res = await axios.get(`http://localhost:3000/api/youtube/search?q=${query}`);
-      console.log("Search Results:", res.data);
-      setResults(res.data.items); // Expecting 'items' from backend
+      // Call backend with user query, backend prepends 'podcast'
+      const res = await axios.get(`http://localhost:3000/api/youtube/search?q=${encodeURIComponent(searchTerm)}`);
+      setResults(res.data.items || []);
     } catch (error) {
       console.error("Error fetching YouTube results", error);
     } finally {
@@ -28,64 +45,56 @@ const YouTubeSearch = () => {
   };
 
   const handleThumbnailClick = (video) => {
-    console.log("Thumbnail clicked:", video);
     setActiveVideo(video);
-    setShowPlayer(true); // Show the player when a thumbnail is clicked
+    setShowPlayer(true);
   };
 
   const handleBackButtonClick = () => {
-    setShowPlayer(false); // Hide the player and go back to search results
+    setShowPlayer(false);
     setActiveVideo(null);
   };
 
   return (
     <div className="pt-8 px-10 min-h-screen bg-black text-white">
       {/* Search Bar */}
-      <form onSubmit={handleSearch} className="mb-6 flex justify-center">
+      <form onSubmit={e => e.preventDefault()} className="mb-6 flex justify-center">
         <input
           type="text"
-          placeholder="Search YouTube..."
+          placeholder="Search Podcasts..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="w-full max-w-2xl px-4 py-2 rounded-l-lg bg-gray-800 border border-gray-700 focus:outline-none text-white"
+          autoComplete="off"
         />
-        <button
-          type="submit"
-          className="bg-red-600 px-6 py-2 rounded-r-lg hover:bg-red-700 transition"
-        >
-          Search
-        </button>
       </form>
 
       {/* Results Grid */}
       {loading ? (
         <p className="text-center text-gray-400">Searching YouTube...</p>
       ) : showPlayer ? (
-        // When the player is showing, hide the search results
         <div className="text-center text-gray-400">Video Player is now active</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {results.length === 0 && query.trim() !== "" && (
+            <p className="text-center text-gray-400 col-span-full">No podcasts found.</p>
+          )}
           {results.map((video) => (
             <div
               key={video.id.videoId}
-              className="bg-gray-900 p-3 rounded-xl shadow hover:scale-105 transition"
+              className="bg-gray-900 p-3 rounded-xl shadow hover:scale-105 transition cursor-pointer"
+              onClick={() => handleThumbnailClick(video)}
             >
-              <div
-                onClick={() => handleThumbnailClick(video)} // Pass full video object
-                className="cursor-pointer"
-              >
-                <img
-                  src={video.snippet.thumbnails.high.url}
-                  alt={video.snippet.title}
-                  className="w-full rounded-lg mb-2"
-                />
-                <h2 className="text-lg font-semibold line-clamp-2">
-                  {video.snippet.title}
-                </h2>
-                <p className="text-sm text-gray-400 mt-1 line-clamp-2">
-                  {video.snippet.channelTitle}
-                </p>
-              </div>
+              <img
+                src={video.snippet.thumbnails.high.url}
+                alt={video.snippet.title}
+                className="w-full rounded-lg mb-2"
+              />
+              <h2 className="text-lg font-semibold line-clamp-2">
+                {video.snippet.title}
+              </h2>
+              <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+                {video.snippet.channelTitle}
+              </p>
             </div>
           ))}
         </div>
@@ -109,17 +118,14 @@ const YouTubeSearch = () => {
             padding: "20px",
           }}
         >
-          {/* Back Button */}
           <button
             onClick={handleBackButtonClick}
             className="absolute top-4 left-4 text-white bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition flex items-center gap-2"
-          >        <FaArrowLeftLong size={24} />
-          
-            Back
+          >
+            <FaArrowLeftLong size={24} /> Back
           </button>
 
-          {/* Video Player */}
-          <div className="relative mt-32 ml-16 pt-[40%] w-full max-w-4xl mb-4"> {/* Adjusted aspect ratio and added margin bottom */}
+          <div className="relative mt-32 ml-16 pt-[40%] w-full max-w-4xl mb-4">
             <iframe
               title={activeVideo.snippet.title}
               width="100%"
@@ -132,10 +138,8 @@ const YouTubeSearch = () => {
             ></iframe>
           </div>
 
-          {/* Title and Description */}
           <div className="text-center">
             <h2 className="text-xl font-semibold mt-4 text-white">{activeVideo.snippet.title}</h2>
-            {/* <p className="text-sm text-gray-400 mt-2 text-white">{activeVideo.snippet.description}</p> */}
           </div>
         </div>
       )}

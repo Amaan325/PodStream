@@ -6,7 +6,11 @@ const {
   update,
   deleteUser,
   signOut,
-  verifyOtpAndRegister
+  verifyOtpAndRegister,
+  subscribeUser,
+  unsubscribeUser,
+  checkSubscription,
+  getSubscribersCount
 } = require("../controllers/userController");
 const router = express.Router();
 const verifyUser = require("../utils/verifyUser");
@@ -18,5 +22,11 @@ router.route("/google-login").post(auth);
 router.put("/update/:_id", verifyUser, update);
 router.delete("/delete/:_id", verifyUser, deleteUser);
 router.get("/signout", signOut);
+
+// New routes for subscription feature
+router.get("/check-subscription/:targetUserId", verifyUser, checkSubscription);
+router.get("/subscribers-count/:userId", getSubscribersCount);
+router.put("/subscribe/:targetUserId", verifyUser, subscribeUser);
+router.put("/unsubscribe/:targetUserId", verifyUser, unsubscribeUser);
 
 module.exports = router;

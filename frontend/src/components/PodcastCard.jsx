@@ -2,19 +2,20 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
-const PodcastCard = ({ id, image, title, username, views, videoUrl }) => {
+const PodcastCard = ({ id, image, title, username, views, videoUrl , uploaderId }) => {
   const baseURL = "http://localhost:3000/";
   const navigate = useNavigate();
   const { currentUser } = useSelector((state) => state.user);
 
   const play = async () => {
+    console.log("In Podcast CAra " , uploaderId)
     try {
       if (currentUser && currentUser.username === username) {
         navigate("/player", {
-          state: { videoUrl, id, image, title, username, views },
+          state: { videoUrl, id, image, title, username, views , uploaderId },
         });
       } else {
-        navigate("/player", { state: { videoUrl, id } });
+        navigate("/player", { state: { videoUrl, id ,username , uploaderId } });
       }
     } catch (error) {
       console.error("Error in play function:", error);

@@ -20,21 +20,23 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    // Favorite podcasts, referenced as an array of Podcast objects
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
     favorites: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Podcast",
       },
     ],
-    // Liked podcasts
     likedPodcasts: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Podcast",
       },
     ],
-    // Disliked podcasts
     dislikedPodcasts: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -46,6 +48,18 @@ const UserSchema = new mongoose.Schema(
       default:
         "https://static-00.iconduck.com/assets.00/profile-default-icon-2048x2045-u3j7s5nj.png",
     },
+
+    // 👇 New subscription-related fields
+    subscribers: {
+      type: Number,
+      default: 0,
+    },
+    subscribedUsers: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   { timestamps: true }
 );

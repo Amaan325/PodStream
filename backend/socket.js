@@ -1,4 +1,3 @@
-// socket.js
 let io = null;
 
 module.exports = {
@@ -14,6 +13,12 @@ module.exports = {
     io.on("connection", (socket) => {
       console.log("✅ New client connected");
 
+      // 🔧 Add this 👇
+      socket.on("join", (userId) => {
+        socket.join(userId); // user joins their personal room
+        console.log("📥 User joined room:", userId);
+      });
+
       socket.on("disconnect", () => {
         console.log("❌ Client disconnected");
       });
@@ -21,6 +26,7 @@ module.exports = {
 
     return io;
   },
+
   getIO: () => {
     if (!io) {
       throw new Error("Socket.io not initialized!");

@@ -5,17 +5,29 @@ const PodcastSchema = new mongoose.Schema({
   description: { type: String, required: true },
   thumbnail: { type: String, required: true },
   tags: [String],
-  category: { 
-    type: String, 
-    enum: ["Technology", "Education", "Health", "Lifestyle", "Business", "Entertainment"], // Add as many categories as needed
-    required: true 
+  category: {
+    type: String,
+    enum: [
+      "Technology",
+      "Education",
+      "Health",
+      "Lifestyle",
+      "Business",
+      "Entertainment",
+    ],
+    required: true,
   },
   views: {
     type: Number,
-    default: 0,  
+    default: 0,
   },
-  videoUrl: { type: String, required: true },
-  uploader: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Reference to user
+  videoUrl: { type: String, required: true }, // HLS (.m3u8) for streaming
+  downloadUrl: { type: String, required: true }, // Original .mp4 for download
+  uploader: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   createdAt: { type: Date, default: Date.now },
 });
 

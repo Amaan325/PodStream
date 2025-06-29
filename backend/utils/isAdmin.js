@@ -1,21 +1,35 @@
-const User = require("../models/userModel"); // Adjust path as necessary
+const User = require('../models/userModel');
 
-// Middleware to check if the user is an admin
 const isAdmin = async (req, res, next) => {
   try {
-    // Assuming the user's ID is stored in req.user.id after authentication (like through JWT)
-    const user = await User.findById(req.user.id);
-
-    // If no user found or the user is not an admin
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied. Admins only.' });
+    // Debugging logs
+    console.log("User from token:", req.user);
+    
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized access - no user data' });
     }
 
-    // If the user is an admin, proceed to the next middleware/controller
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found in database' });
+    }
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({ 
+        message: 'Access denied. Admins only.',
+        userRole: user.role // Helpful for debugging
+      });
+    }
+    
+    // Attach full user document to request for later use
+    req.adminUser = user;
     next();
   } catch (error) {
-    console.error("Error in isAdmin middleware:", error);
-    res.status(500).json({ message: 'Server error.' });
+    console.error('Admin check error:', error);
+    return res.status(500).json({ 
+      message: 'Server error during admin check',
+      error: error.message 
+    });
   }
 };
 

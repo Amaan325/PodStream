@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const path = require("path");
+const commentRoutes = require("./routes/commentRoutes");
 
 require("dotenv").config();
 
@@ -18,13 +19,14 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5173"],
+    origin:  "http://localhost:5173" , 
     credentials: true,
   })
 );
 app.use(express.json());
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/api/", require("./routes/downloadRoute"));
 
 app.use("/user/favorites", favoritesRoutes);
 app.use("/user", userRoutes);
@@ -32,6 +34,7 @@ app.use("/podcasts", podcastRoutes);
 app.use("/api/youtube", youtubeRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api", commentRoutes);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

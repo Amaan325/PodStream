@@ -9,4 +9,7 @@ router.get("/reports/:podcastId", verifyUser, reportController.getReportsByPodca
 router.patch("/reports/resolve/:reportId", verifyUser, reportController.resolveReport);
 router.patch("/reports/review/:reportId", verifyUser, reportController.reviewReport);
 
+// ✅ Delete all reports for a podcast (e.g., when admin deletes the podcast)
+router.delete("/delete/:podcastId", verifyUser, reportController.deleteReportsByPodcast);
+
 module.exports = router;

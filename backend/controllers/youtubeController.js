@@ -3,12 +3,14 @@ const axios = require("axios");
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY; // Keep it in .env for security
 
 const searchYouTube = async (req, res) => {
-  console.log("I am here");
-  const query = req.query.q;
+  const userQuery = req.query.q || "";
 
-  if (!query) {
+  if (!userQuery.trim()) {
     return res.status(400).json({ error: "Search query is required." });
   }
+
+  // Prepend 'podcast' keyword to the user query
+  const query = `podcast ${userQuery}`.trim();
 
   try {
     const response = await axios.get("https://www.googleapis.com/youtube/v3/search", {
@@ -21,7 +23,6 @@ const searchYouTube = async (req, res) => {
       },
     });
 
-    // Log the response to check if videoId exists
     return res.status(200).json(response.data);
   } catch (error) {
     console.error("YouTube Search Error:", error.message);

@@ -1,7 +1,11 @@
-// routes/podcastRoutes.js
 const express = require('express');
 const router = express.Router();
-const { uploadPodcast, getAllPodcasts, updatePodcast } = require('../controllers/podcastController');
+const {
+  uploadPodcast,
+  getAllPodcasts,
+  deletePodcast,
+  searchPodcasts,
+} = require('../controllers/podcastController');
 const multer = require('multer');
 const verifyUser = require('../utils/verifyUser');
 
@@ -12,12 +16,29 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
-  }
+  },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 600 * 1024 * 1024 // 100MB limit
+  }
+});
+router.post(
+  '/upload/:_id',
+  verifyUser,
+  upload.fields([
+    { name: 'thumbnail', maxCount: 1 },
+    { name: 'videoFile', maxCount: 1 }
+  ]),
+  uploadPodcast
+);
 
-router.post('/upload/:_id',verifyUser, upload.fields([{ name: 'thumbnail' }, { name: 'videoFile' }]), uploadPodcast);
-router.get('/getAll' ,  getAllPodcasts)
-// router.put("/updatePodcast/:_id" , updatePodcast)
+router.get('/getAll', getAllPodcasts);
+router.delete('/delete/:uploadId', verifyUser, deletePodcast);
+// ✅ ADD THIS LINE FOR SEARCH
+router.get('/search', searchPodcasts);
+// router.get('/progress/:uploadId', getProcessingProgress);
+
 module.exports = router;

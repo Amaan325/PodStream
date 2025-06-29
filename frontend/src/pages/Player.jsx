@@ -1,14 +1,26 @@
-import VideoPlayer from "./VideoPlayer";
 import { useEffect, useRef } from "react";
-import videojs from "video.js";
 import { useLocation } from "react-router-dom";
+import videojs from "video.js";
+
+import VideoPlayer from "./VideoPlayer";
+import CommentSection from "./CommentSection";
 
 const Player = () => {
   const location = useLocation();
-  const { videoUrl, id, image, title, username, views, description } =
-    location.state || {};
+  const {
+    videoUrl,
+    id,
+    image,
+    title,
+    username,
+    uploaderId,
+    views,
+    description,
+  } = location.state || {};
+
   const cleanedVideoUrl = videoUrl ? videoUrl.replace(/^\.+/, "").trim() : "";
-  const actualUrl = `http://localhost:3000${cleanedVideoUrl}`; // Use template literal correctly
+  const actualUrl = `http://localhost:3000${cleanedVideoUrl}`;
+
   const playerRef = useRef(null);
 
   const videoPlayerOptions = {
@@ -26,7 +38,6 @@ const Player = () => {
   const handlePlayerReady = (player) => {
     playerRef.current = player;
 
-    // You can handle player events here, for example:
     player.on("waiting", () => {
       videojs.log("player is waiting");
     });
@@ -36,25 +47,33 @@ const Player = () => {
     });
   };
 
-  // useEffect(() => {
-  //   console.log(id);
-  // }, [id]);
-
+  useEffect(() => {
+    console.log("In Player", username);
+    console.log(id);
+  }, []);
   return (
-    <div className="pt-32 flex items-center justify-center h-screen bg-black mb-12">
-      <div className="">
-        <VideoPlayer
-          options={videoPlayerOptions}
-          onReady={handlePlayerReady}
-          videoId={id}
-          image = {image}
-          title = {title}
-          description = {description}
-          views = {views} 
-          username={username}// Send the id to VideoPlayer component
-        />
+    <>
+      <div className="pt-32 bg-black mb-12">
+        <div className="flex items-center justify-center">
+          <VideoPlayer
+            key={id}
+            url={actualUrl}
+            options={videoPlayerOptions}
+            onReady={handlePlayerReady}
+            videoId={id}
+            uploaderId={uploaderId}
+            image={image}
+            title={title}
+            description={description}
+            views={views}
+            username={username}
+          />
+        </div>
       </div>
-    </div>
+      <div className="max-w-4xl mx-auto px-4">
+        <CommentSection podcastId={id} />
+      </div>
+    </>
   );
 };
 
