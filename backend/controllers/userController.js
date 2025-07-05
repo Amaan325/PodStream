@@ -1,4 +1,5 @@
 const User = require("../models/userModel");
+const Podcast = require("../models/podcastModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const errorHandler = require("../utils/error");
@@ -231,23 +232,17 @@ const signOut = async (req, res, next) => {
 
 // Subscription Controller Functions
 const checkSubscription = async (req, res) => {
-  console.log("Checking subscription status");
   try {
     const currentUserId = req.user.validUser._id;
     const targetUserId = req.params.targetUserId;
-    console.log("CurrentUserID = ", currentUserId);
-    console.log("targetUserID = ", targetUserId);
 
     const currentUser = await User.findById(currentUserId);
     if (!currentUser) {
-      console.error("Current user not found");
       return res.status(404).json({ message: "User not found." });
     }
     const isSubscribed = currentUser.subscribedUsers.includes(targetUserId);
-    console.log("Is subscribed:", isSubscribed);
     res.status(200).json({ isSubscribed });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Server error." });
   }
 };
@@ -269,12 +264,9 @@ const getSubscribersCount = async (req, res) => {
 };
 
 const subscribeUser = async (req, res) => {
-  console.log("In subscribe user");
   try {
     const currentUserId = req.user.validUser._id;
     const targetUserId = req.params.targetUserId;
-    console.log("CurrentUserID = ", currentUserId);
-    console.log("targetUserID = ", targetUserId);
 
     if (currentUserId === targetUserId) {
       return res
@@ -354,7 +346,54 @@ const unsubscribeUser = async (req, res) => {
     res.status(500).json({ message: "Server error." });
   }
 };
+const togglePodcastLike = async (req, res) => {
+  console.log("Podcast like");
 
+  const userId = req.user.validUser._id;
+  const podcastId = req.params.id;
+  try {
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const podcast = await Podcast.findById(podcastId);
+    if (!podcast) return res.status(404).json({ message: "Podcast not found" });
+
+    const index = user.likedPodcasts.findIndex(
+      (id) => id.toString() === podcastId
+    );
+
+    let action;
+    if (index > -1) {
+      // Already liked → unlike
+      user.likedPodcasts.splice(index, 1);
+      action = "unliked";
+    } else {
+      // Not liked → like
+      user.likedPodcasts.push(podcastId);
+      action = "liked";
+    }
+
+    await user.save();
+    res.json({
+      message: `Podcast ${action} successfully`,
+      liked: action === "liked",
+    });
+  } catch (error) {
+    console.error("Like error:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
+};
+getLikedPodcasts = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.validUser._id).populate(
+      "likedPodcasts"
+    );
+    res.json({ likedPodcasts: user.likedPodcasts });
+  } catch (err) {
+    console.error("Error in getLikedPodcasts:", err);
+    res.status(500).json({ message: "Failed to get liked podcasts" });
+  }
+};
 module.exports = {
   signUp,
   signIn,
@@ -365,7 +404,8 @@ module.exports = {
   verifyOtpAndRegister,
   checkSubscription,
   getSubscribersCount,
-
+  togglePodcastLike,
   unsubscribeUser,
   subscribeUser,
+  getLikedPodcasts,
 };

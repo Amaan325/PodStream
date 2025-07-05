@@ -16,6 +16,18 @@ exports.createComment = async (req, res) => {
     res.status(500).json({ error });
   }
 };
+exports.getCommentCountByPodcast = async (req, res) => {
+  try {
+    const { podcastId } = req.params;
+
+    const count = await Comment.countDocuments({ podcast: podcastId });
+
+    res.status(200).json({ success: true, count });
+  } catch (error) {
+    console.error("Error getting comment count:", error);
+    res.status(500).json({ success: false, error: "Failed to get comment count" });
+  }
+};
 
 exports.getCommentsByPodcast = async (req, res) => {
   try {

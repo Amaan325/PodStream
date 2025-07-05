@@ -31,6 +31,7 @@ const Navbar = () => {
 
     socket.emit("join", currentUser._id);
     socket.on("newPodcastFromSubscribed", (data) => {
+      console.log(data)
       setNotifications((prev) => [data, ...prev]);
     });
 

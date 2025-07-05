@@ -12,7 +12,9 @@ export const VideoPlayer = (props) => {
   const { currentUser } = useSelector((state) => state.user);
   const videoRef = useRef(null);
   const playerRef = useRef(null);
+
   const {
+    userAdmin,
     url,
     options,
     onReady,
@@ -28,31 +30,37 @@ export const VideoPlayer = (props) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loadingSub, setLoadingSub] = useState(false);
   const [subscribersCount, setSubscribersCount] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   useEffect(() => {
-    const fetchSubscriptionData = async () => {
-      if (!currentUser || !uploaderId) return;
-
+    const fetchInitialData = async () => {
+      if (!currentUser || !videoId || !uploaderId) return;
       try {
-        const subRes = await axios.get(
-          `http://localhost:3000/user/check-subscription/${uploaderId}`,
-          {
+        const [subRes, countRes, likeStatusRes] = await Promise.all([
+          axios.get(
+            `http://localhost:3000/user/check-subscription/${uploaderId}`,
+            { withCredentials: true }
+          ),
+          axios.get(
+            `http://localhost:3000/user/subscribers-count/${uploaderId}`
+          ),
+          axios.get(`http://localhost:3000/podcasts/like-status/${videoId}`, {
             withCredentials: true,
-          }
-        );
-        setIsSubscribed(subRes.data.isSubscribed);
+          }),
+        ]);
 
-        const countRes = await axios.get(
-          `http://localhost:3000/user/subscribers-count/${uploaderId}`
-        );
+        setIsSubscribed(subRes.data.isSubscribed);
         setSubscribersCount(countRes.data.count);
+        setHasLiked(likeStatusRes.data.hasLiked);
+        setLikesCount(likeStatusRes.data.likesCount);
       } catch (err) {
-        console.error("Error fetching subscription data:", err);
+        console.error("Error fetching initial data:", err);
       }
     };
-     
-    fetchSubscriptionData();
-  }, [currentUser, uploaderId , videoId]);
+
+    fetchInitialData();
+  }, [currentUser?._id, videoId, uploaderId]);
 
   const handleSubscribe = async () => {
     if (!currentUser || !uploaderId) return;
@@ -76,6 +84,25 @@ export const VideoPlayer = (props) => {
       console.error("Subscription error:", err);
     } finally {
       setLoadingSub(false);
+    }
+  };
+
+  const handleLike = async () => {
+    if (!currentUser) return;
+
+    try {
+      const res = await axios.put(
+        `http://localhost:3000/podcasts/like-count/${videoId}`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        setHasLiked(res.data.liked);
+        setLikesCount(res.data.likes);
+      }
+    } catch (err) {
+      console.error("Failed to toggle like:", err);
     }
   };
 
@@ -103,13 +130,10 @@ export const VideoPlayer = (props) => {
       player.autoplay(options.autoplay);
       player.src(options.sources);
     }
-    console.log(options?.sources?.[0]?.src);
-  }, [options, videoRef]);
+  }, [options]);
 
   useEffect(() => {
     const player = playerRef.current;
-    const lessonId = url?.split("courses/")[1]?.split("/")[0];
-    console.log("Lesson ID:", lessonId);
     return () => {
       if (player && !player.isDisposed()) {
         player.dispose();
@@ -117,6 +141,7 @@ export const VideoPlayer = (props) => {
       }
     };
   }, []);
+
   const lessonId = url?.split("courses/")[1]?.split("/")[0];
 
   return (
@@ -128,57 +153,74 @@ export const VideoPlayer = (props) => {
       <div className="p-4 text-white">
         <h1 className="text-2xl font-bold">{title}</h1>
         <div className="flex items-center justify-between mt-2">
-          <div className="flex items-center">
-            <span className="text-gray-400">{views} views</span>
+          <div className="flex items-center gap-3 text-gray-400">
+            <span>{views} views</span>
             <span className="mx-2">•</span>
-            <span className="text-gray-400">
-              {subscribersCount} subscribers
-            </span>
+            <span>{subscribersCount} subscribers</span>
+            <span className="mx-2">•</span>
+            <span>{likesCount} likes</span>
           </div>
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-4 px-4">
-        <button
-          onClick={handleSubscribe}
-          disabled={loadingSub || !currentUser}
-          className={`flex items-center ${
-            isSubscribed ? "bg-gray-600" : "bg-red-700"
-          } text-[16px] text-white uppercase px-4 py-2 rounded-lg hover:bg-red-600 disabled:opacity-80 w-[180px] transition-all duration-200 ease-in-out`}
-        >
-          {isSubscribed ? (
-            <>
-              <MdUnsubscribe className="text-2xl mr-2" /> Unsubscribe
-            </>
-          ) : (
-            <>
-              <MdSubscriptions className="text-2xl mr-2" /> Subscribe
-            </>
-          )}
-        </button>
-
-        <div className="flex space-x-4">
-          <button className="flex items-center text-white hover:text-blue-600 border border-gray-400 px-4 py-2 rounded-3xl">
-            <AiOutlineLike className="text-2xl mr-2" /> Like
+      {/* Buttons and Menu (Only show if NOT admin) */}
+      {userAdmin !== "admin" && (
+        <div className="flex justify-between items-center mt-4 px-4">
+          {/* Subscribe Button */}
+          <button
+            onClick={handleSubscribe}
+            disabled={loadingSub || !currentUser}
+            className={`flex items-center ${
+              isSubscribed ? "bg-gray-600" : "bg-red-700"
+            } text-[16px] text-white uppercase px-4 py-2 rounded-lg hover:bg-red-600 w-[180px] transition-all duration-200 ease-in-out`}
+          >
+            {isSubscribed ? (
+              <>
+                <MdUnsubscribe className="text-2xl mr-2" /> Unsubscribe
+              </>
+            ) : (
+              <>
+                <MdSubscriptions className="text-2xl mr-2" /> Subscribe
+              </>
+            )}
           </button>
 
-          <a
-            href={`http://localhost:3000/api/download/${lessonId}`}
-            className="flex items-center text-white hover:text-green-600 border border-gray-400 px-4 py-2 rounded-3xl"
-          >
-            <FaDownload className="text-2xl mr-2" /> Download
-          </a>
+          {/* Like / Download / Menu */}
+          <div className="flex space-x-4">
+            {/* Like Button */}
+            <button
+              onClick={handleLike}
+              disabled={!currentUser}
+              className={`flex items-center text-white border px-4 py-2 rounded-3xl ${
+                hasLiked
+                  ? "border-blue-500 text-blue-500"
+                  : "border-gray-400 hover:text-blue-600"
+              }`}
+            >
+              <AiOutlineLike className="text-2xl mr-2" />
+              {hasLiked ? "Liked" : "Like"}
+            </button>
 
-          <PodcastMenu
-            videoId={videoId}
-            image={image}
-            title={title}
-            description={description}
-            views={views}
-            username={username}
-          />
+            {/* Download Link */}
+            <a
+              href={`http://localhost:3000/api/download/${lessonId}`}
+              className="flex items-center text-white hover:text-green-600 border border-gray-400 px-4 py-2 rounded-3xl"
+            >
+              <FaDownload className="text-2xl mr-2" /> Download
+            </a>
+
+            {/* 3-dot menu */}
+            <PodcastMenu
+              videoId={videoId}
+              image={image}
+              title={title}
+              description={description}
+              views={views}
+              username={username}
+            />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -21,6 +21,15 @@ const PodcastSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  viewedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+   likes: { 
+    type: Number,
+    default: 0
+  },
+  likedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User"
+  }],  
   videoUrl: { type: String, required: true }, // HLS (.m3u8) for streaming
   downloadUrl: { type: String, required: true }, // Original .mp4 for download
   uploader: {

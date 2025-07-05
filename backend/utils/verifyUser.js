@@ -12,7 +12,6 @@ const verifyUser = async (req, res, next) => {
         token,
         process.env.JWT_SECRET || process.env.SECRET_KEY
       );
-      console.log(decoded);
       req.user = decoded; // Store the entire decoded payload
       return next();
     } catch (err) {
@@ -30,7 +29,6 @@ const verifyUser = async (req, res, next) => {
   try {
     const decoded = jwt.verify(cookieToken, process.env.SECRET_KEY);
     req.user = decoded;
-    console.log(req.user)
     console.log("In verify User");
     next();
   } catch (err) {

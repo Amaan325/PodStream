@@ -59,7 +59,7 @@ const UploadPodcast = () => {
 
       if (response.data.success) {
         setSuccess(true);
-        setTimeout(() => navigate("/podcasts"), 2000);
+        setTimeout(() => navigate("/"), 2000);
       } else {
         setError(response.data.message || "Upload failed");
       }
@@ -84,7 +84,12 @@ const UploadPodcast = () => {
         <div className="flex flex-col lg:flex-row items-start gap-6">
           {/* Left Animation */}
           <div className="hidden lg:flex w-1/4 justify-center">
-            <Lottie animationData={uploadAnimation} loop autoplay className="h-72" />
+            <Lottie
+              animationData={uploadAnimation}
+              loop
+              autoplay
+              className="h-72"
+            />
           </div>
 
           {/* Upload Form */}
@@ -170,6 +175,8 @@ const UploadPodcast = () => {
                     <option value="Technology">Technology</option>
                     <option value="Education">Education</option>
                     <option value="Entertainment">Entertainment</option>
+                    <option value="Business">Business</option>
+                    <option value="Lifestyle">Lifestyle</option>
                   </select>
                 </div>
               </div>
@@ -206,7 +213,12 @@ const UploadPodcast = () => {
 
           {/* Right Animation */}
           <div className="hidden lg:flex w-1/4 justify-center">
-            <Lottie animationData={uploadAnimation} loop autoplay className="h-72" />
+            <Lottie
+              animationData={uploadAnimation}
+              loop
+              autoplay
+              className="h-72"
+            />
           </div>
         </div>
       </div>

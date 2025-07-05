@@ -20,7 +20,7 @@ const Favorite = () => {
             `http://localhost:3000/user/favorites/get/${currentUser._id}`,
             { withCredentials: true } // Ensure cookies/session are sent
           );
-
+          console.log("Favorite Podcasts:", favoriteResponse.data);
           // Store favorite podcasts in the state
           setFavoritePodcasts(favoriteResponse.data);
         } catch (error) {
@@ -31,7 +31,6 @@ const Favorite = () => {
         navigate("/Signin"); // Redirect to login if no user is logged in
       }
     };
-
     fetchData(); // Fetch favorite podcasts
   }, [currentUser, navigate]);
 
@@ -56,11 +55,11 @@ const Favorite = () => {
                     id={podcast._id}
                     image={podcast.thumbnail}
                     title={podcast.title}
-                    username={podcast.uploader?.username || "Unknown"}
+                    username={podcast.uploader?.username}
                     views={podcast.views}
                     description={podcast.description}
                     videoUrl={podcast.videoUrl}
-                    uploaderId={podcast.uploader?._id}
+                    uploaderId={podcast.uploader}
                   />
                 </div>
               ))}

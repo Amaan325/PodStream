@@ -10,7 +10,9 @@ const {
   subscribeUser,
   unsubscribeUser,
   checkSubscription,
-  getSubscribersCount
+  getSubscribersCount,
+  togglePodcastLike,
+  getLikedPodcasts,
 } = require("../controllers/userController");
 const router = express.Router();
 const verifyUser = require("../utils/verifyUser");
@@ -28,5 +30,8 @@ router.get("/check-subscription/:targetUserId", verifyUser, checkSubscription);
 router.get("/subscribers-count/:userId", getSubscribersCount);
 router.put("/subscribe/:targetUserId", verifyUser, subscribeUser);
 router.put("/unsubscribe/:targetUserId", verifyUser, unsubscribeUser);
+router.put("/like-podcast/:id", verifyUser, togglePodcastLike);
+// routes/userRoutes.js
+router.get("/liked-podcasts", verifyUser, getLikedPodcasts);
 
 module.exports = router;

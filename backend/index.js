@@ -33,7 +33,7 @@ app.use("/user", userRoutes);
 app.use("/podcasts", podcastRoutes);
 app.use("/api/youtube", youtubeRoutes);
 app.use("/api/reports", reportRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api/admin", adminRoutes); 
 app.use("/api", commentRoutes);
 
 app.use((err, req, res, next) => {

@@ -23,9 +23,8 @@ const AdminDashboard = () => {
   const [socket, setSocket] = useState(null);
   const [filterDropdown, setFilterDropdown] = useState(false);
   const [filter, setFilter] = useState("all");
-  const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(
-    false
-  );
+  const [notificationDropdownOpen, setNotificationDropdownOpen] =
+    useState(false);
 
   const [allPodcasts, setAllPodcasts] = useState([]);
   const [reportedPodcastsData, setReportedPodcastsData] = useState([]);
@@ -101,7 +100,7 @@ const AdminDashboard = () => {
           const exists = prev.some((n) => n.report.id === data.report.id);
           return exists ? prev : [data, ...prev];
         });
-        console.log(data)
+        console.log(data);
         setToastMessage(data.message);
         setTimeout(() => setToastMessage(""), 5000);
         fetchSummaryData();
@@ -161,13 +160,18 @@ const AdminDashboard = () => {
         },
       });
 
-      await axios.delete(`http://localhost:3000/api/reports/delete/${podcastId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await axios.delete(
+        `http://localhost:3000/api/reports/delete/${podcastId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      setNotifications((prev) => prev.filter((n) => n.podcast.id !== podcastId));
+      setNotifications((prev) =>
+        prev.filter((n) => n.podcast.id !== podcastId)
+      );
       fetchSummaryData();
     } catch (err) {
       console.error("Failed to delete podcast and reports:", err);
@@ -198,13 +202,26 @@ const AdminDashboard = () => {
   };
 
   const handleViewPodcast = (notification) => {
-    const { id, thumbnail, title, username, views, videoUrl } = notification.podcast;
+    console.log(notification.reporter.id);
+    const { id, thumbnail, title, username, views, videoUrl } =
+      notification.podcast;
+    const { uploaderId } = notification.reporter;
     navigate("/player", {
-      state: { id, image: thumbnail, title, username, views, videoUrl },
+      state: {
+        id,
+        image: thumbnail,
+        title,
+        username,
+        views,
+        videoUrl,
+        uploaderId,
+        user: "admin",
+      },
     });
   };
 
-  const filteredPodcasts = filter === "all" ? allPodcasts : reportedPodcastsData;
+  const filteredPodcasts =
+    filter === "all" ? allPodcasts : reportedPodcastsData;
 
   return (
     <div className="relative w-full h-screen bg-black p-6 text-white overflow-y-auto">
@@ -218,7 +235,9 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold">Admin Panel</h1>
         <div className="relative">
           <button
-            onClick={() => setNotificationDropdownOpen(!notificationDropdownOpen)}
+            onClick={() =>
+              setNotificationDropdownOpen(!notificationDropdownOpen)
+            }
             className="relative p-2 bg-gray-700 rounded-full hover:bg-gray-600"
           >
             <FaBell className="text-white text-xl" />
@@ -254,12 +273,12 @@ const AdminDashboard = () => {
                       >
                         View
                       </button>
-                      <button
+                      {/* <button
                         onClick={() => handleResolveReport(notif.report.id)}
                         className="text-green-400 hover:underline"
                       >
                         Resolve
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 </div>
@@ -368,14 +387,17 @@ const AdminDashboard = () => {
               <span className="text-yellow-400">{podcast.views} views</span>
               <button
                 onClick={() =>
+                  console.log("View podcast", podcast._id) ||
                   navigate("/player", {
                     state: {
-                      id: podcast.id,
+                      id: podcast._id,
                       image: podcast.thumbnail,
                       title: podcast.title,
                       username: podcast.username,
                       views: podcast.views,
                       videoUrl: podcast.videoUrl,
+                      uploaderId: podcast.uploader._id,
+                      user: "admin",
                     },
                   })
                 }

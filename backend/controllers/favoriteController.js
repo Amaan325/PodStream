@@ -51,13 +51,12 @@ const getUserFavorites = async (req, res) => {
     }
 
     // Fetch all podcasts
-    const allPodcasts = await Podcast.find(); // Get all podcasts from the Podcast model
-
+    const allPodcasts = await Podcast.find() // Get all podcasts from the Podcast model
+console.log(allPodcasts)
     // Match favorite podcast IDs with the full list of podcasts
     const favoritePodcasts = allPodcasts.filter(
       (podcast) => user.favorites.includes(podcast._id.toString()) // Check if podcast ID exists in user's favorites
     );
-
     // Return the matched podcasts
     res.json(favoritePodcasts); // Send back the matched favorite podcasts
   } catch (error) {

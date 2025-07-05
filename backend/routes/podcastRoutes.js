@@ -5,6 +5,9 @@ const {
   getAllPodcasts,
   deletePodcast,
   searchPodcasts,
+  viewPodcast,
+  likePodcast,
+  getLikeStatus
 } = require('../controllers/podcastController');
 const multer = require('multer');
 const verifyUser = require('../utils/verifyUser');
@@ -15,7 +18,7 @@ const storage = multer.diskStorage({
     cb(null, './uploads'); // Ensure this directory exists
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    cb(null, `${Date.now()}-${file.originalname}`); 
   },
 });
 
@@ -40,5 +43,8 @@ router.delete('/delete/:uploadId', verifyUser, deletePodcast);
 // ✅ ADD THIS LINE FOR SEARCH
 router.get('/search', searchPodcasts);
 // router.get('/progress/:uploadId', getProcessingProgress);
+router.put("/view/:podcastId", verifyUser, viewPodcast);
+router.put("/like-count/:podcastId", verifyUser, likePodcast);
+router.get("/like-status/:podcastId", verifyUser, getLikeStatus);
 
 module.exports = router;
